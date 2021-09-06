@@ -13,7 +13,7 @@
 // visit io.adafruit.com if you need to create an account,
 // or if you need your Adafruit IO key.
 #define IO_USERNAME "karenjoachin"
-#define IO_KEY "aio_vBSs15SegBI2g6RnAUvsKvWYq6aL"
+#define IO_KEY "aio_RXDi46Qa7BK4RUIS2lCtWrPmwdYi"
 
 //******************************* WIFI **************************************
 #define WIFI_SSID "CLARO1_DC7424"
@@ -169,6 +169,8 @@ void setup()
   digitalWrite(display1, LOW);
   digitalWrite(display2, LOW);
   digitalWrite(display3, LOW);
+  desplegar7Seg(0);
+  desplegarPunto(0);
 }
 
 //-----------------------------------------------------------------------------
@@ -180,15 +182,32 @@ void loop()
   if (cbtn1 == 1)
   {
 
-    configurarLED();
-    //primer display
+    if (millis() - lastime >= sampletime) //es como un delay de 3 segundos par adafuit
+    {
+
+      io.run();
+      Serial.print("sending Temperatura -> ");
+      Serial.println(tempReal, 1);
+      Serial.print(" °C  ");
+      TempFeed->save(tempReal); //guardara en la nube los datos
+
+      Serial.print(" \n");
+      Serial.print("Enviando ");
+      Serial.print(cbtn1, 1);
+      Serial.print(" \n");
+
+      lastime = millis();
+    }
+  }
+  configurarLED();
+      //primer display
     digitalWrite(display1, HIGH);
     digitalWrite(display2, LOW);
     digitalWrite(display3, LOW);
     desplegar7Seg(decenas);
     desplegarPunto(0);
     ti = millis();
-    while (millis() < ti + 5) ;
+    while (millis() < ti + 5);
 
     //segundo display
     digitalWrite(display1, LOW);
@@ -205,42 +224,22 @@ void loop()
     digitalWrite(display3, HIGH);
     desplegar7Seg(decimal);
     desplegarPunto(0);
-    confignumeros();
-  }
-  ti = millis();
-  while (millis() < ti + 5);
 
-  if (millis() - lastime >= sampletime) //es como un delay de 3 segundos par adafuit
+    ti = millis();
+    while (millis() < ti + 5);
+  else
   {
-
-    io.run();
-    Serial.print("sending Temperatura -> ");
-    Serial.println(tempReal, 1);
-    Serial.print(" °C  ");
-    TempFeed->save(tempReal); //guardara en la nube los datos
-
-    Serial.print(" \n");
-    Serial.print("Enviando ");
-    Serial.print(cbtn1, 1);
-    Serial.print(" \n");
-
-    lastime = millis();
+    confignumeros();
+    ledcWrite(PWMcanalL3, dutycycleLED2);
+    ledcWrite(PWMcanalL1, dutycycleLED2);
+    ledcWrite(PWMcanalL2, dutycycleLED2);
+    digitalWrite(display1, LOW);
+    digitalWrite(display2, LOW);
+    digitalWrite(display3, LOW);
+    dutycycle = 13;
+    ledcWrite(PWMcanalS, dutycycle);
   }
-  confignumeros();
 }
-else
-{
-
-  ledcWrite(PWMcanalL3, dutycycleLED2);
-  ledcWrite(PWMcanalL1, dutycycleLED2);
-  ledcWrite(PWMcanalL2, dutycycleLED2);
-  digitalWrite(display1, LOW);
-  digitalWrite(display2, LOW);
-  digitalWrite(display3, LOW);
-  dutycycle = 13;
-  ledcWrite(PWMcanalS, dutycycle);
-}
-
 
 //-----------------------------------------------------------------------------
 //Funcion para configurar pwm de leds
@@ -262,7 +261,7 @@ void configurarPWMLED(void)
 //-----------------------------------------------------------------------------
 void configurarLED(void)
 {
-  if (tempC <= 37.0) //led verde
+  if (tempC <= 25.0) //led verde
   {
     ledcWrite(PWMcanalL3, dutycycleLED);
     ledcWrite(PWMcanalL1, dutycycleLED2);
@@ -270,7 +269,7 @@ void configurarLED(void)
     dutycycle = 6;
     ledcWrite(PWMcanalS, dutycycle);
   }
-  else if (tempC < 37.5 && tempC > 37.0) //led amarilla
+  else if (tempC < 30.0 && tempC > 25.0) //led amarilla
   {
 
     ledcWrite(PWMcanalL2, dutycycleLED);
@@ -279,7 +278,7 @@ void configurarLED(void)
     dutycycle = 13;
     ledcWrite(PWMcanalS, dutycycle);
   }
-  else if (tempC >= 37.5) //led roja
+  else if (tempC >= 30.0) //led roja
   {
     ledcWrite(PWMcanalL1, dutycycleLED);
     ledcWrite(PWMcanalL3, dutycycleLED2);
@@ -313,7 +312,7 @@ void confignumeros(void)
   decenas = temperatura / 100;
   unidades = (temperatura - (decenas * 100)) / 10;
   decimal = (temperatura - (decenas * 100) - (unidades * 10));
-
   ti = millis();
-  while (millis() < ti + 10)
+  while (millis() < ti + 5)
+    ;
 }
